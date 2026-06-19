@@ -1,0 +1,78 @@
+zabbix_export:
+  version: '6.0'
+  date: '2026-06-19T19:01:42Z'
+  groups:
+    -
+      uuid: 135fc81e5fc34097be1fd25a8d122ee4
+      name: 'Templates/add it'
+  templates:
+    -
+      uuid: c8ad085cac424114a84fbc02537aa8aa
+      template: 'Template - Windows Ports Discovery'
+      name: 'Template - Windows Ports Discovery'
+      description: |
+        Desenvolvido por Lucas Gabriel de Lima
+        LinkedIn: www.linkedin.com/in/lucas-lima-tech
+        
+        
+        Esse Template Necessita de UserParameter:
+        
+        UserParameter=ports.discovery,powershell -NoProfile -ExecutionPolicy Bypass -Command "$services=Get-CimInstance Win32_Service; Get-NetTCPConnection -State Listen | Select-Object LocalPort,OwningProcess -Unique | ForEach-Object { $svc=$services | Where-Object ProcessId -eq $_.OwningProcess; $proc=Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue; [PSCustomObject]@{'{#PORTA}'=$_.LocalPort; '{#PROCESSO}'=$proc.ProcessName; '{#SERVICO}'=if($svc){$svc.Name -join ', '}else{'N/A'}} } | Sort-Object '{#PORTA}' | ConvertTo-Json -Compress"
+      groups:
+        -
+          name: 'Templates/add it'
+      discovery_rules:
+        -
+          uuid: a8fe1f98ea7c460c805027916695cbf4
+          name: 'Windows ports discovery'
+          key: ports.discovery
+          delay: 0;wd1-7h23
+          status: DISABLED
+          description: |
+            Desenvolvido por Lucas Gabriel de Lima
+            LinkedIn: www.linkedin.com/in/lucas-lima-tech
+            
+            
+            Esse Template Necessita de UserParameter:
+            
+            UserParameter=ports.discovery,powershell -NoProfile -ExecutionPolicy Bypass -Command "$services=Get-CimInstance Win32_Service; Get-NetTCPConnection -State Listen | Select-Object LocalPort,OwningProcess -Unique | ForEach-Object { $svc=$services | Where-Object ProcessId -eq $_.OwningProcess; $proc=Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue; [PSCustomObject]@{'{#PORTA}'=$_.LocalPort; '{#PROCESSO}'=$proc.ProcessName; '{#SERVICO}'=if($svc){$svc.Name -join ', '}else{'N/A'}} } | Sort-Object '{#PORTA}' | ConvertTo-Json -Compress"
+          item_prototypes:
+            -
+              uuid: 9791fc9cb128465ebbbe520c6bf48daa
+              name: 'Porta {#PORTA} - {#SERVICO} - {#PROCESSO}'
+              key: 'net.tcp.port[,{#PORTA}]'
+              delay: 3m
+              status: DISABLED
+              valuemap:
+                name: 'Status Disvovery Portas'
+              tags:
+                -
+                  tag: Application
+                  value: Portas
+              trigger_prototypes:
+                -
+                  uuid: a8bed5e8e8bf498e90b3bd1832bca05d
+                  expression: 'last(/Template - Windows Ports Discovery/net.tcp.port[,{#PORTA}])=0'
+                  name: 'Porta {#PORTA} - {#SERVICO} - {#PROCESSO} - Está indisponivel'
+                  priority: DISASTER
+          lld_macro_paths:
+            -
+              lld_macro: '{#PORTA}'
+              path: '$.[''{#PORTA}'']'
+            -
+              lld_macro: '{#PROCESSO}'
+              path: '$.[''{#PROCESSO}'']'
+            -
+              lld_macro: '{#SERVICO}'
+              path: '$.[''{#SERVICO}'']'
+      valuemaps:
+        -
+          uuid: 6858d2ac6177464a8acb79d3ce6d2392
+          name: 'Status Disvovery Portas'
+          mappings:
+            -
+              value: '1'
+              newvalue: up
+            -
+              value: '0'
+              newvalue: down
