@@ -1,0 +1,95 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: 361eb84afd3f4e229227a6661059dbe6
+      name: Windows/Security
+  templates:
+    - uuid: 4a154caa4c094f53968fffbd2d01a101
+      template: 'Template - Monitoramento de Contas Privilegiadas - Active Directory'
+      name: 'Template - Monitoramento de Contas Privilegiadas - Active Directory'
+      description: |
+        Criador por: Lucas Gabriel de Lima
+        Linkdin: www.linkedin.com/in/lucas-lima-tech
+        
+        
+        #### Descoberta de Eventos Necessita de UserParamiter ####
+        UserParameter=ad.admin.users.discovery,powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$g='Administrators','Domain Admins','Enterprise Admins','Schema Admins','Account Operators','Server Operators','Backup Operators','Print Operators','DnsAdmins','Group Policy Creator Owners','Key Admins','Enterprise Key Admins'; $result=@($g | ForEach-Object { try { Get-ADGroupMember $_ -Recursive -ErrorAction Stop } catch {} } | Where-Object { $_.objectClass -eq 'user' } | ForEach-Object { $d=$_.DistinguishedName -split ','; $domain=($d | Where-Object { $_ -like 'DC=*' }) -replace 'DC=','' -join '.'; $netbios=(Get-ADDomain -Identity $domain).NetBIOSName; [PSCustomObject]@{'{#USERNAME}'=$_.SamAccountName;'{#DOMAIN}'=$netbios} } | Sort-Object '{#DOMAIN}','{#USERNAME}' -Unique); ConvertTo-Json @($result) -Compress
+      groups:
+        - name: Windows/Security
+      discovery_rules:
+        - uuid: 2628b7e8044a4666bbe90aca6a659d38
+          name: 'AD - Usuários Administrativos'
+          key: ad.admin.users.discovery
+          delay: 24h
+          lifetime: 1d
+          description: |
+            #### Descoberta de Eventos Necessita de UserParamiter ####
+            
+            UserParameter=ad.admin.users.discovery,powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$g='Administrators','Domain Admins','Enterprise Admins','Schema Admins','Account Operators','Server Operators','Backup Operators','Print Operators','DnsAdmins','Group Policy Creator Owners','Key Admins','Enterprise Key Admins';$g|ForEach-Object{try{Get-ADGroupMember $_ -Recursive -ErrorAction Stop}catch{}}|Where-Object{$_.objectClass -eq 'user'}|ForEach-Object{$d=$_.DistinguishedName -split ',';$domain=($d|Where-Object{$_ -like 'DC=*'}) -replace 'DC=','' -join '.';$netbios=(Get-ADDomain -Identity $domain).NetBIOSName;[PSCustomObject]@{'{#USERNAME}'=$_.SamAccountName;'{#DOMAIN}'=$netbios}}|Sort-Object '{#DOMAIN}','{#USERNAME}' -Unique|ConvertTo-Json -Compress
+          item_prototypes:
+            - uuid: 76b15820ce1c40689e23b9208f57cfb4
+              name: 'Evento 4624 - {#USERNAME}'
+              type: ZABBIX_ACTIVE
+              key: 'eventlog[Security,(?i){#USERNAME},,,^4624$,,skip]'
+              delay: 10s
+              history: 6h
+              value_type: LOG
+              trends: '0'
+              tags:
+                - tag: 'Event Viewer'
+                  value: 'Evento 4624'
+              trigger_prototypes:
+                - uuid: a24aca123afc440a9d9c7d075c937503
+                  expression: |
+                    find(/Template - Monitoramento de Contas Privilegiadas - Active Directory/eventlog[Security,(?i){#USERNAME},,,^4624$,,skip],,"iregexp","New Logon:[[:space:]]*Security ID:.*{#DOMAIN}\\\\{#USERNAME}")=1 and
+                    
+                    find(/Template - Monitoramento de Contas Privilegiadas - Active Directory/eventlog[Security,(?i){#USERNAME},,,^4624$,,skip],,"iregexp","Logon Information:[[:space:]]*Logon Type:[[:space:]]*(2|10)")=1 and
+                    
+                    find(/Template - Monitoramento de Contas Privilegiadas - Active Directory/eventlog[Security,(?i){#USERNAME},,,^4624$,,skip],,"iregexp","Elevated Token:[[:space:]]+Yes")=1
+                  recovery_mode: NONE
+                  name: 'Logon Emergencial: {#USERNAME}'
+                  priority: DISASTER
+                  type: MULTIPLE
+                  manual_close: 'YES'
+            - uuid: 82f0456ab7094de58a482d4ab1b3159a
+              name: 'Evento 4724 - {#USERNAME}'
+              type: ZABBIX_ACTIVE
+              key: 'eventlog[Security,(?i){#USERNAME},,,^4724$,,skip]'
+              delay: 10s
+              history: 6h
+              value_type: LOG
+              trends: '0'
+              tags:
+                - tag: 'Event Viewer'
+                  value: 'Evento 4724'
+              trigger_prototypes:
+                - uuid: 83b6c9efbf144fee9107347907eafa89
+                  expression: 'find(/Template - Monitoramento de Contas Privilegiadas - Active Directory/eventlog[Security,(?i){#USERNAME},,,^4724$,,skip],,"iregexp","Target Account:[[:space:][:print:]]*Account Name:[[:space:]]+{#USERNAME}")=1'
+                  recovery_mode: NONE
+                  name: 'Reset de Senha: {#USERNAME}'
+                  priority: DISASTER
+                  type: MULTIPLE
+                  manual_close: 'YES'
+          timeout: 30s
+      valuemaps:
+        - uuid: 4c80c6bf94f140208fcc387b11d56552
+          name: 'Status dos serviços'
+          mappings:
+            - value: '0'
+              newvalue: Running
+            - value: '1'
+              newvalue: Paused
+            - value: '2'
+              newvalue: 'Start pending'
+            - value: '3'
+              newvalue: 'Pause pending'
+            - value: '4'
+              newvalue: 'Continue pending'
+            - value: '5'
+              newvalue: 'Stop pending'
+            - value: '6'
+              newvalue: Stopped
+            - value: '7'
+              newvalue: Unknown
+            - value: '255'
+              newvalue: 'No such service'
