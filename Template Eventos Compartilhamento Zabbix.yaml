@@ -1,0 +1,90 @@
+zabbix_export:
+  version: '6.0'
+  groups:
+    - uuid: 361eb84afd3f4e229227a6661059dbe6
+      name: Windows/Security
+  templates:
+    - uuid: d93126e629f9446283df950379659410
+      template: 'Eventos Windows - Eventos de Compartilhamento'
+      name: 'Eventos Windows - Eventos de Compartilhamento'
+      groups:
+        - name: Windows/Security
+      items:
+        - uuid: 729095eeb81d4ff4ae8038c597f8415f
+          name: 'Evento 4670'
+          type: ZABBIX_ACTIVE
+          key: 'eventlog[Security,,,,^4670$,,skip]'
+          delay: 10s
+          history: 6h
+          value_type: LOG
+          trends: '0'
+          tags:
+            - tag: 'Event Viewer'
+              value: 'Eventos Geral'
+          triggers:
+            - uuid: 9965a47e1d3e4f96bb6f22c54036f138
+              expression: 'find(/Eventos Windows - Eventos de Compartilhamento/eventlog[Security,,,,^4670$,,skip],,"regexp",".+")=1'
+              recovery_mode: NONE
+              name: 'Evento 4670: Alteração de Permissões em Objeto'
+              priority: DISASTER
+              type: MULTIPLE
+              manual_close: 'YES'
+        - uuid: fea212ef8600462fba481a3ad9353f54
+          name: 'Evento 5142'
+          type: ZABBIX_ACTIVE
+          key: 'eventlog[Security,,,,^5142$,,skip]'
+          delay: 10s
+          history: 6h
+          value_type: LOG
+          trends: '0'
+          tags:
+            - tag: 'Event Viewer'
+              value: 'Eventos Geral'
+          triggers:
+            - uuid: cfd61c1f59e84979839df4344b670ab2
+              expression: 'find(/Eventos Windows - Eventos de Compartilhamento/eventlog[Security,,,,^5142$,,skip],,"iregexp","(Account Name|Nome da Conta):\\s*([A-Za-z0-9_-]+\\$|SYSTEM|SISTEMA)")=0'
+              recovery_mode: NONE
+              name: 'Evento 5142: Criação de Compartilhamento de Rede'
+              priority: DISASTER
+              type: MULTIPLE
+              manual_close: 'YES'
+        - uuid: 48f84b33776549e1b466dd04e05b3b58
+          name: 'Evento 5143'
+          type: ZABBIX_ACTIVE
+          key: 'eventlog[Security,,,,^5143$,,skip]'
+          delay: 10s
+          history: 6h
+          value_type: LOG
+          trends: '0'
+          tags:
+            - tag: 'Event Viewer'
+              value: 'Eventos Geral'
+          triggers:
+            - uuid: 401722d3e1b34090906395b6efd49ca1
+              expression: 'find(/Eventos Windows - Eventos de Compartilhamento/eventlog[Security,,,,^5143$,,skip],,"regexp",".+")=1'
+              recovery_mode: NONE
+              name: 'Evento 5143: Alteração de Permissões em Compartilhamento'
+              priority: DISASTER
+              type: MULTIPLE
+              manual_close: 'YES'
+        - uuid: 0eade02c504f44e49122530adab82cf0
+          name: 'Evento 5144'
+          type: ZABBIX_ACTIVE
+          key: 'eventlog[Security,,,,^5144$,,skip]'
+          delay: 10s
+          history: 6h
+          value_type: LOG
+          trends: '0'
+          tags:
+            - tag: 'Event Viewer'
+              value: 'Eventos Geral'
+          triggers:
+            - uuid: cdcf15eeacbc4c8c9936b24232c409f0
+              expression: 'find(/Eventos Windows - Eventos de Compartilhamento/eventlog[Security,,,,^5144$,,skip],,"regexp",".+")=1'
+              recovery_mode: NONE
+              name: 'Evento 5144: Exclusão de Compartilhamento de Rede'
+              priority: DISASTER
+              type: MULTIPLE
+              manual_close: 'YES'
+      macros:
+        - macro: '{$NOME_USER}'
